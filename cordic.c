@@ -51,9 +51,8 @@ int main(void)
 	/* Populate table of fixed point precomputed atan values */
 	for(int idx = 0; idx < 32; ++idx)
 	{
-	    float atansp = (float) atan2f(1.0, ((float)(1 << idx)));
+	    float atansp = (float) atan2(1.0, ((double)(1 << idx)));
 	    CreateFixedPointNumber(atansp, &fxatans[idx]);
-	    PrintFixedAsFloat("//fxatan", &fxatans[idx]);
 	    printf("atantable(%d) := %u.U //Q4.28 fixed point of %f\n", idx, fxatans[idx].data, atansp);
 	}
 	
@@ -65,15 +64,19 @@ int main(void)
 	const float kf = (float) k;
 	float invk = 1.f/kf;	
 	const double PI = 3.141592653589793238462643383279502884197169;
-	printf("k single precision binary data: 0x%x.8\n", (*(unsigned int*) &kf));
-	printf("single precision reciprocal of k, binary: 0x%x.8\n", *((unsigned int*) &invk));
-	
+
 	float x = kf, y = 0.f;
 	printf("Starting with [%f %f]\n", x, y);
 	float alpha = 45.0 * PI/180.0;
 	float theta = 0.0;
 
-	union FixedPointNumber fxalpha, fxtheta, fxsigma, fxx, fxy, fxinvk;
+	union FixedPointNumber fxk, fxinvk;
+	CreateFixedPointNumber(k, &fxk);
+	CreateFixedPointNumber(1.f/k, &fxinvk);	
+	printf("k Q4.28: %u.U\n", fxk.data);
+	printf("invk Q4.28: %u.U\n", fxinvk.data);
+	
+	union FixedPointNumber fxalpha, fxtheta, fxsigma, fxx, fxy;
 	CreateFixedPointNumber(alpha, &fxalpha);
 	CreateFixedPointNumber(theta, &fxtheta);
 	CreateFixedPointNumber(x, &fxx);
@@ -103,13 +106,8 @@ int main(void)
 		  }
 		
 		fxtheta.data += fxatan.data;
-		PrintFixedAsFloat("fxyterm pre shift", &fxyterm);
-		PrintFixedAsFloat("fxxterm pre shift", &fxxterm);				
 		fxyterm.data = fxyterm.data >> i;
 		fxxterm.data = fxxterm.data >> i;
-		PrintFixedAsFloat("fxyterm post shift", &fxyterm);
-		PrintFixedAsFloat("fxxterm post shift", &fxxterm);		
-		
 		fxx.data = fxt.data - (fxyterm.data);
 		fxy.data = fxy.data + (fxxterm.data);
 		PrintFixedAsFloat("fxx", &fxx);
