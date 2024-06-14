@@ -69,70 +69,58 @@ int main(void)
 	float invk = 1.f/kf;	
 	const double PI = 3.141592653589793238462643383279502884197169;
 
-	float x = kf, y = 0.f;
+	float y0 = 2.f;
+	float x = 1.f, y = y0, ytarg = 0.f;
 	printf("Starting with [%f %f]\n", x, y);
-	float alpha = PI/2.f; //45.0 * PI/180.0;
-	float theta = 0.0;
 
-	union FixedPointNumber fxk, fxinvk;
-	CreateFixedPointNumber(k, &fxk);
-	CreateFixedPointNumber(1.f/k, &fxinvk);	
-	printf("k Q4.28: %u.U\n", fxk.data);
-	printf("invk Q4.28: %u.U\n", fxinvk.data);
-	
-	union FixedPointNumber fxalpha, fxtheta, fxsigma, fxx, fxy;
-	CreateFixedPointNumber(alpha, &fxalpha);
-	CreateFixedPointNumber(theta, &fxtheta);
+	float theta = 0.f;
+
+
+	union FixedPointNumber fxtheta, fxsigma, fxx, fxy, fxytarg;
 	CreateFixedPointNumber(x, &fxx);
 	CreateFixedPointNumber(y, &fxy);
-
-	
-	PrintFixedAsFloat("fxx", &fxx);
-	PrintFixedAsFloat("fxy", &fxy);
-	PrintFixedAsFloat("fxtheta", &fxtheta);
+	CreateFixedPointNumber(ytarg, &fxytarg);
 
 	for(int i = 0; i < 32; ++i)
 	{
 		union FixedPointNumber fxt; // temporary for storing copy of x
 		CopyFixedPoint(&fxt, &fxx);
 		union FixedPointNumber fxxterm, fxyterm, fxatan;
+		
+		PrintFixedAsFloat("fxx", &fxx);
+		PrintFixedAsFloat("fxy", &fxy);
+		printf("thetaf: %f\n", theta);
+		
 		CopyFixedPoint(&fxxterm, &fxt);
 		CopyFixedPoint(&fxyterm, &fxy);
 		CopyFixedPoint(&fxatan, &fxatans[i]);
 		
-		PrintFixedAsFloat("fxatans[i]", &fxatans[i]);		
-
-		if(fxtheta.data >= fxalpha.data)
+		if(fxy.data == fxytarg.data)
+		break;
+		
+		if(fxy.data < fxytarg.data)
 		  {
 		    fxxterm.data = -fxxterm.data;
 		    fxyterm.data = -fxyterm.data;
 		    fxatan.data = -fxatan.data;
 		  }
-		
-		fxtheta.data += fxatan.data;
+		  
+		float atanv = CreateFloatFromFixedPointNumber(&fxatan);
+		theta += atanv;
 		fxyterm.data = fxyterm.data >> i;
 		fxxterm.data = fxxterm.data >> i;
-		fxx.data = fxt.data - (fxyterm.data);
-		fxy.data = fxy.data + (fxxterm.data);
-		PrintFixedAsFloat("fxx", &fxx);
-		PrintFixedAsFloat("fxy", &fxy);
-		PrintFixedAsFloat("fxtheta", &fxtheta);		
+		fxx.data = fxt.data + (fxyterm.data);
+		fxy.data = fxy.data - (fxxterm.data);
+		
 	}
 	
 
 	float recoveredx = CreateFloatFromFixedPointNumber(&fxx);
 	float recoveredy = CreateFloatFromFixedPointNumber(&fxy);	
 
-	printf("Recovered x: %f y: %f\n", recoveredx, recoveredy);
+	printf("Recovered x: %f y: %f theta: %f\n", recoveredx, recoveredy, theta);
 	printf("Recovered data: cos: %.8x sin: %.8x\n", *((unsigned int*) &recoveredx), *((unsigned int*) &recoveredy));
-	float softcosf = cosf(alpha);
-	float softsinf = sinf(alpha);
-
-	printf("software single precision: cos: %f, sin: %f\n",
-	       softcosf, softsinf);
-	printf("software 32-bit data: cos: %.8x sin: %.8x\n",
-	       *((unsigned int*) &softcosf),
-	       *((unsigned int*) &softsinf));
+	printf("atanf(%f)=%f\n", y0, atanf(y0));
 	
 	free(fxatans);
 	fxatans = 0;
