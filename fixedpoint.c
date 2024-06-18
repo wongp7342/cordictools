@@ -9,6 +9,38 @@ static unsigned int clz16(unsigned short x);
 static unsigned int clz32(unsigned int x);
 static unsigned int clz64(unsigned long long x);
 
+void FloatToFixed64(float num, union FixedPoint64* pFixed)
+{
+  union SinglePrecision floatp;
+  floatp.num = num;
+  unsigned long long frac = floatp.fields.frac;
+  unsigned long long exp = floatp.fields.exp;
+  int shamt = exp - 127;
+  //printf("frac: %.8x\n", frac);
+  //printf("frac2: %.16lx\n", (0x0000000000800000 | frac) << 9);
+  pFixed->data = shamt < 0 ?
+    ((0x0000000000800000 | frac) << 9) >> (-shamt) :
+    ((0x0000000000800000 | frac) << 9) << shamt;
+  
+  pFixed->data = floatp.fields.sign ? (~pFixed->data + 1) : pFixed->data;
+}
+
+float Fixed64ToFloat(const union FixedPoint64* pFixed)
+{
+  unsigned long long data = pFixed->data;
+  union SinglePrecision spfloat;
+  spfloat.data = 0;
+  if(!!(data & 0x8000000000000000))
+    {
+      data = -data;
+      spfloat.fields.sign = 1;
+    }
+  unsigned int leadingzeros = clz64(data);
+  spfloat.fields.exp = ((32 - 1) - leadingzeros) + 127;
+  spfloat.fields.frac = ((data << (leadingzeros + 1))) >> (64-23);
+  return spfloat.num;
+}
+
 void CopyFixedPoint(union FixedPointNumber* dest, const union FixedPointNumber* src)
 {
   dest->data = src->data;

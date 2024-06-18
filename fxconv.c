@@ -5,9 +5,9 @@
 int main(void)
 {
   printf("Enter fixed point in hex:");
-  union FixedPointNumber num;
-  scanf("%x", &num.data);
-  
-  PrintFixedAsFloat("Result", &num);
+  union FixedPoint64 num;
+  scanf("%llx", &num.data);
+  float result = Fixed64ToFloat(&num);
+  printf("Result: %f\n", result);
   return 0;
 }

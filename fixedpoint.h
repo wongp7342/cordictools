@@ -35,6 +35,20 @@ union FixedPointNumber
 	int data;
 };
 
+union FixedPoint64
+{
+  //Q32.32
+  struct
+  {
+    unsigned int i;
+    unsigned int f;
+  } fields;
+  unsigned long long data;
+};
+
+void FloatToFixed64(float num, union FixedPoint64* pFixed);
+float Fixed64ToFloat(const union FixedPoint64* pFixed);
+
 void CopyFixedPoint(union FixedPointNumber* dest, const union FixedPointNumber* src);
 void PrintBin(unsigned long long val, unsigned int width);
 void PrintFixedAsFloat(const char* label, const union FixedPointNumber* num);

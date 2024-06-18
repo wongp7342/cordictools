@@ -60,6 +60,23 @@ int main(void)
 	    printf("atantable(%d) := %u.U //Q4.28 fixed point of %f\n", idx, fxatans[idx].data, atansp);
 	}
 	
+	union FixedPoint64* fxatans64 = (union FixedPoint64*) malloc(sizeof(union FixedPoint64) * 32);
+	/* Populate table of fixed point precomputed atan values */
+	for(int idx = 0; idx < 32; ++idx)
+	{
+	    float atansp = (float) atan2(1.0, ((double)(1 << idx)));
+	    FloatToFixed64(atansp, &fxatans64[idx]);
+	    printf("atantable(%d) := scala.BigInt(\"%.16llx\", 16).U(64.W) //Q32.32 fixed point of %f\n", idx, 
+	    fxatans64[idx].data, atansp);
+	}
+	
+	for(int idx = 0; idx < 32; ++idx)
+	{
+		union FixedPoint64* fxnum = &fxatans64[idx];
+		float num = Fixed64ToFloat(fxnum);
+		printf("Reading back %d: %f\n", idx, num);
+	}
+	
 	/* k is the limit of the product of the sequence i = 0 to n of cos(1/(2^i)) as n -> inf */
 	/* We pre-scale the unit vector for the CORDIC algorithm by
 	   dividing it by k, which saves us two multiplications at the
